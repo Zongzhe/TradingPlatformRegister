@@ -1,0 +1,164 @@
+package com.fdm.model;
+
+import java.sql.*;
+import java.util.List;
+
+public class UsersDAO {
+
+	Connection			con		= null;
+	Statement			stmt	= null;
+	static ResultSet	rs		= null;
+	ResultSetMetaData	rsmd	= null;
+	static User			user;
+
+	public void connectDB() {
+		try {
+			//Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+			DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
+
+		} catch (Exception e) {
+			System.out.println("JDBC-ODBC driver failed to load-have you loaded the JAR file?");
+			return;
+		}
+
+		try {
+
+			//con = DriverManager.getConnection("jdbc:odbc:NWind", "", "");
+
+			con = DriverManager.getConnection("jdbc:oracle:thin:zongzhechen/Oracle101@oracle.fdmgroup.com:1521:XE");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void closeDB() {
+		try {
+			con.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		user = new User();
+		UsersDAO usersDAO = new UsersDAO();
+		usersDAO.connectDB();
+
+		String username = "user14";
+		user = usersDAO.getUser(username);
+
+		username = "Neely Morrow";
+		usersDAO.removeUser(username);
+		usersDAO.closeDB();
+	}
+
+	public void addUser(User user) throws SQLException {
+		// TODO Auto-generated method stub
+		connectDB();
+
+		try {
+			CallableStatement cs = con.prepareCall("{call ADD_USERS(?, ?, ?, ?, ?, ?)}");
+			cs.setString(1, user.getUserName());
+			cs.setString(2, user.getPassWord());
+			cs.setString(3, user.getFirstName());
+			cs.setString(4, user.getLastName());
+			int enable = 0;
+			if (user.isEnable()) {
+				enable = 1;
+			}
+			cs.setInt(5, enable);
+			cs.setInt(6, user.getRole());
+			System.out.println("user.getUserName(): " + user.getUserName());
+			cs.execute();
+
+		} catch (SQLException sqle) {
+			sqle.printStackTrace();
+			System.out.println("Error adding a new user to database: " + sqle.getMessage());
+		} finally {
+			closeDB();
+		}
+	}
+
+	public User getUser(String username) {
+		// TODO Auto-generated method stub
+		connectDB();
+		User userReturn = new User();
+		ResultSet rs = null;
+
+		String query = "SELECT username, name FROM TRADING_USER WHERE username=?";
+
+		PreparedStatement ps;
+
+		try {
+			ps = con.prepareStatement(query);
+			ps.setString(1, username);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				System.out.println(rs.getInt("employee_id"));
+				System.out.println(rs.getString("name"));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		closeDB();
+		return userReturn;
+	}
+
+	public int getUserRole(String username) {
+		// TODO Auto-generated method stub
+		int role = 0;
+		ResultSet rs = null;
+
+		String query = "SELECT role FROM TRADING_USER WHERE username=?";
+
+		PreparedStatement ps;
+
+		try {
+			ps = con.prepareStatement(query);
+			ps.setString(1, username);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				role = rs.getInt("role");
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return role;
+	}
+
+	public void removeUser(String username) {
+		// TODO Auto-generated method stub
+		String query = "DELETE FROM TRADING_USER WHERE username = ?";
+		PreparedStatement ps;
+		try {
+			ps = con.prepareStatement(query);
+			ps.setString(1, username);
+			ps.executeUpdate();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public void updateUser(User user) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public List<User> listUsers() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}
